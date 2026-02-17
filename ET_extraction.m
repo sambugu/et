@@ -30,8 +30,6 @@ clear
 ly=@(yr)~rem(yr,400)|(rem(yr,100)&~rem(yr,4));
 
 if ~exist('isfolder'), isfolder=@isdir;end %#ok
-chdir('\\147.100.1.28\Projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts')
-indir='\\147.100.1.28\Donnees_Climatiques2\evapotranspiration_products\';
 chdir('F:\RS_data\evaspa_mijn\Evaluation_Benchmarking\ET_extracts')
 indir='F:\RS_data\ET\';
 
