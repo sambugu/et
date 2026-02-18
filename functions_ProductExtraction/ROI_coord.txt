@@ -1,0 +1,4 @@
+Name,TL_Lat,TL_Lon,BR_Lat,BR_Lon
+Kenya,30.51,5.49,-5.49,45.49
+# ADD NEW ROW HERE
+

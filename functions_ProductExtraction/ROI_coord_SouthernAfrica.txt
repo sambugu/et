@@ -1,0 +1,4 @@
+Name,TL_Lat,TL_Lon,BR_Lat,BR_Lon
+SouthernAfrica,-15,10,-35,30
+# ADD NEW ROW HERE
+

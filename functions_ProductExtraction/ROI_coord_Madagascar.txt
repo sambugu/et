@@ -1,0 +1,4 @@
+Name,TL_Lat,TL_Lon,BR_Lat,BR_Lon
+Madagascar,-11,42,-27,51
+# ADD NEW ROW HERE
+
