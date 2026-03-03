@@ -4104,6 +4104,584 @@ end
             title(LC{i})
         end
                  
+%% %%%%%%%%%%%%%%%
+%%
+%% UNCERTAINTY : from 1) UNCERTAINTY in misc.m
+%%
+%% 
 
+clear
+
+            %%% from uncert_allLSTs.m
+            load \\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\VARS_ALL_LSTs
+            load \\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\ET_All_int
+            load \\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\ET_All
+            ET_All = ET_All';
+            load \\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\ET_ref_pdct_inputs.mat
+            result_path = '\\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\results_plots\';
+            
+            field_nms = fieldnames(VARS_ALL_LSTs.OUTPUTS.ETEC_pt);
+            field_nms = sort(field_nms); %% this the order of ET_All_int - see ET_extraction.m
+            % ind_2004_2021 = 19724:26298;
+            ind_2004_2024 = 19724:27394;
+            % lgth_ind0424 = length(ind_2004_2021);
+            lgth_ind0424 = length(ind_2004_2024);
+            % mths_2004_2024=ETpdct_inputs.Avignon.DLY.month(ind_2004_2021);
+            mths_2004_2024=ETpdct_inputs.Avignon.DLY.month(ind_2004_2024);
+            seas_ind.winter = mths_2004_2024==12 | mths_2004_2024==1 | mths_2004_2024==2;
+            seas_ind.spring = mths_2004_2024==3 | mths_2004_2024==4 | mths_2004_2024==5;
+            seas_ind.summer = mths_2004_2024==6 | mths_2004_2024==7 | mths_2004_2024==8;
+            seas_ind.autumn = mths_2004_2024==9 | mths_2004_2024==10 | mths_2004_2024==11;
+            
+    interpolatedFLUX = {true,false};
+    varsind.LST = [1 3];%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+    varsind.Rad = [1 2 3]; %ERA5 1, MSG 2, MERRA 3
+    varsind.EF = [7 2]; %EF7
+    varsind.G = [5 2 1 8];% G5
+            varsind.LST = 1:4;%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+            varsind.Rad = 1:3; %ERA5 1, MSG 2, MERRA 3
+            varsind.EF = 1:9; %EF7
+            varsind.G = 1:9;% G5
+        varind_dum.LST = 1;%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+        varind_dum.Rad = 1; %ERA5 1, MSG 2, MERRA 3
+        varind_dum.EF = 7; %EF7
+        varind_dum.G = 5;% G5
+        clear uncertAll
+            ly=@(yr)~rem(yr,400)|(rem(yr,100)&~rem(yr,4));
+            yrs = 2004:2024;%1950:2024;
+            lp_yrs = double(ly(yrs));lp_yrs(lp_yrs==1) = 366;lp_yrs(lp_yrs==0) = 365;
+            lp_yrs_dy = ones(length(yrs),366).*(1:length(yrs))';
+            lp_yrs_dy(~ly(yrs),end) = nan;
+            lp_yrs_dy = reshape(lp_yrs_dy',[],1);lp_yrs_dy(isnan(lp_yrs_dy )) = [];
+for i_intbl=1:length(interpolatedFLUX) %% COMPILE UNCERTAINTY DATA
+
+        field_nms = fieldnames(VARS_ALL_LSTs.OUTPUTS.ETEC_pt);
+        field_nms = sort(field_nms); %% this the order of ET_All_int - see ET_extraction.m
+
+    ET_All_wOUwoint3D=[];
+    if interpolatedFLUX{i_intbl}                
+        for i=1:length(field_nms)
+            % ET_All_wNwoint3D(:,:,i)=ET_All_int(((i-1)*6575+1):i*6575,:);
+            ET_All_wOUwoint3D(:,:,i)=ET_All_int(((i-1)*lgth_ind0424+1):i*lgth_ind0424,:);
+        end
+    else
+        for i=1:length(field_nms)
+            % ET_All_wNwoint3D(:,:,i)=ET_All_int(((i-1)*6575+1):i*6575,:);
+            ET_All_wOUwoint3D(:,:,i)=ET_All(((i-1)*lgth_ind0424+1):i*lgth_ind0424,:);
+        end
+    end   
+    field_nms{13}='All_Sites';field_nms{4}='CrauC';
+
+    vars = fieldnames(varsind);
+    for i_var = 1:length(vars) %vars
+    % varind.LST = 1;%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+    % varind.Rad = 1; %ERA5 1, MSG 2, MERRA 3
+    % varind.EF = 7; %EF7
+    % varind.G = 5;% G5
+    varind_dummy = varind_dum;
+    varind_dummy.(vars{i_var}) = varsind.(vars{i_var});
+
+        for i_lst=1:length(varind_dummy.LST)
+            for i_rad=1:length(varind_dummy.Rad)
+                for i_ef=1:length(varind_dummy.EF)
+                    for i_g=1:length(varind_dummy.G)        
+                        
+                        varind.LST = varind_dummy.LST(i_lst);%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+                        varind.Rad = varind_dummy.Rad(i_rad); %ERA5 1, MSG 2, MERRA 3
+                        varind.EF = varind_dummy.EF(i_ef); %EF7
+                        varind.G = varind_dummy.G(i_g);% G5
+                        
+                        %%% uncertainty                    
+                        uncert = [];
+                        etstd_ALL = [];etstd_LST_ALL = [];etstd_Rad_ALL = [];etstd_EF_ALL = [];etstd_G_ALL = [];
+                        seas_ind_tmp =seas_ind;
+                        for i=1:length(field_nms)
+                            % figure('Name',field_nms{i})
+                            % figure('Name',field_nms{i},'Renderer','painters','Position',[120 120 490 720]);
+                            uncert.(field_nms{i})=table;
+                            if i<length(field_nms)        
+                                etstd=nanstd(ET_All_wOUwoint3D(:,:,i),[],2);
+                                %% LST - era5, efn7, g5 [4]
+                                ind = [0+81*(varind.Rad-1)+9*(varind.EF-1)+varind.G 243+81*(varind.Rad-1)+9*(varind.EF-1)+varind.G ...
+                                    243*2+81*(varind.Rad-1)+9*(varind.EF-1)+varind.G 243*3+81*(varind.Rad-1)+9*(varind.EF-1)+varind.G];
+                                etstd_LST=nanstd(ET_All_wOUwoint3D(:,ind,i),0,2);
+                                uncert.([field_nms{i} '_VARs']).('LST_ET')=ET_All_wOUwoint3D(:,ind,i);
+                            
+                        
+                                %% Rad. - aqua11, efn7, g5 [3]
+                                ind = [243*(varind.LST-1)+81*0+9*(varind.EF-1)+varind.G 243*(varind.LST-1)+81*1+9*(varind.EF-1)+varind.G 243*(varind.LST-1)+81*2+9*(varind.EF-1)+varind.G];
+                                etstd_Rad=nanstd(ET_All_wOUwoint3D(:,ind,i),0,2);
+                                uncert.([field_nms{i} '_VARs']).('Rad_ET')=ET_All_wOUwoint3D(:,ind,i);
+                            
+                            
+                                %% EF - aqua11, era5, g5 [9]
+                                ind = [243*(varind.LST-1)+81*(varind.Rad-1)+9*0+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*1+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*2+varind.G ...
+                                    243*(varind.LST-1)+81*(varind.Rad-1)+9*3+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*4+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*5+varind.G ...
+                                    243*(varind.LST-1)+81*(varind.Rad-1)+9*6+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*7+varind.G 243*(varind.LST-1)+81*(varind.Rad-1)+9*8+varind.G];
+                                etstd_EF=nanstd(ET_All_wOUwoint3D(:,ind,i),0,2);
+                                uncert.([field_nms{i} '_VARs']).('EF_ET')=ET_All_wOUwoint3D(:,ind,i);
+                            
+                                
+                                %% G - aqua11, era5, efn7 [9]
+                                ind = [243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+1 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+2 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+3 ...
+                                    243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+4 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+5 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+6 ...
+                                    243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+7 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+8 243*(varind.LST-1)+81*(varind.Rad-1)+9*(varind.EF-1)+9];
+                                etstd_G=nanstd(ET_All_wOUwoint3D(:,ind,i),0,2);
+                                uncert.([field_nms{i} '_VARs']).('G_ET')=ET_All_wOUwoint3D(:,ind,i);
+                            
+                            
+                                etstd_ALL = [etstd_ALL;etstd];etstd_LST_ALL = [etstd_LST_ALL;etstd_LST];etstd_Rad_ALL = [etstd_Rad_ALL;etstd_Rad];etstd_EF_ALL = [etstd_EF_ALL;etstd_EF];etstd_G_ALL = [etstd_G_ALL;etstd_G];
+                            
+                        
+                                % keyboard
+                                % daily for all years : 2D - for all years in one SDs        
+                                uncert.([field_nms{i} '_stdev2D']).Global    = nan(length(yrs),366);
+                                uncert.([field_nms{i} '_stdev2D']).LST    = nan(length(yrs),366);
+                                uncert.([field_nms{i} '_stdev2D']).Rad    = nan(length(yrs),366);
+                                uncert.([field_nms{i} '_stdev2D']).EF    = nan(length(yrs),366);
+                                uncert.([field_nms{i} '_stdev2D']).G    = nan(length(yrs),366);
+                                
+                                for i_yr=1:length(yrs)
+                                    ind = find(lp_yrs_dy==i_yr);            
+                                    uncert.([field_nms{i} '_stdev2D']).Global(i_yr,1:lp_yrs(i_yr))   = etstd(ind);
+                                    uncert.([field_nms{i} '_stdev2D']).LST(i_yr,1:lp_yrs(i_yr))      = etstd_LST(ind);
+                                    uncert.([field_nms{i} '_stdev2D']).Rad(i_yr,1:lp_yrs(i_yr))      = etstd_Rad(ind);
+                                    uncert.([field_nms{i} '_stdev2D']).EF(i_yr,1:lp_yrs(i_yr))       = etstd_EF(ind);
+                                    uncert.([field_nms{i} '_stdev2D']).G(i_yr,1:lp_yrs(i_yr))        = etstd_G(ind);
+                                end
+                        
+                                uncert.([field_nms{i} '_stdev2D']).AllMedian = [nanmedian(uncert.([field_nms{i} '_stdev2D']).Global);...
+                                        nanmedian(uncert.([field_nms{i} '_stdev2D']).LST);...
+                                        nanmedian(uncert.([field_nms{i} '_stdev2D']).Rad);...
+                                        nanmedian(uncert.([field_nms{i} '_stdev2D']).EF);...
+                                        nanmedian(uncert.([field_nms{i} '_stdev2D']).G)];
+                                uncert.([field_nms{i} '_stdev2D']).rows = {'Global';'LST';'Radiation';'EF';'G'};
+                        
+                            else
+                                etstd = etstd_ALL;etstd_LST = etstd_LST_ALL;etstd_Rad = etstd_Rad_ALL;etstd_EF = etstd_EF_ALL;etstd_G = etstd_G_ALL;
+                                seas_ind_tmp.winter = repmat(seas_ind_tmp.winter,length(field_nms)-1,1);
+                                seas_ind_tmp.spring = repmat(seas_ind_tmp.spring,length(field_nms)-1,1);
+                                seas_ind_tmp.summer = repmat(seas_ind_tmp.summer,length(field_nms)-1,1);
+                                seas_ind_tmp.autumn = repmat(seas_ind_tmp.autumn,length(field_nms)-1,1);
+                            end
+                        
+                            % ALL SEASONS COMBINED
+                            uncert.(field_nms{i}).Global = [nanmean(etstd);nanmedian(etstd)];
+                            uncert.(field_nms{i}).LST = [nanmean(etstd_LST);nanmedian(etstd_LST)];
+                            uncert.(field_nms{i}).Rad = [nanmean(etstd_Rad);nanmedian(etstd_Rad)];
+                            uncert.(field_nms{i}).EF = [nanmean(etstd_EF);nanmedian(etstd_EF)];
+                            uncert.(field_nms{i}).G = [nanmean(etstd_G);nanmedian(etstd_G)];        
+                        
+                            % PER SEASON    
+                            % winter
+                            uncert.(field_nms{i}).Global_Winter = [nanmean(etstd(seas_ind_tmp.winter));nanmedian(etstd(seas_ind_tmp.winter))];
+                            uncert.(field_nms{i}).LST_Winter = [nanmean(etstd_LST(seas_ind_tmp.winter));nanmedian(etstd_LST(seas_ind_tmp.winter))];
+                            uncert.(field_nms{i}).Rad_Winter = [nanmean(etstd_Rad(seas_ind_tmp.winter));nanmedian(etstd_Rad(seas_ind_tmp.winter))];
+                            uncert.(field_nms{i}).EF_Winter = [nanmean(etstd_EF(seas_ind_tmp.winter));nanmedian(etstd_EF(seas_ind_tmp.winter))];
+                            uncert.(field_nms{i}).G_Winter = [nanmean(etstd_G(seas_ind_tmp.winter));nanmedian(etstd_G(seas_ind_tmp.winter))];
+                        
+                            % spring
+                            uncert.(field_nms{i}).Global_Spring = [nanmean(etstd(seas_ind_tmp.spring));nanmedian(etstd(seas_ind_tmp.spring))];
+                            uncert.(field_nms{i}).LST_Spring = [nanmean(etstd_LST(seas_ind_tmp.spring));nanmedian(etstd_LST(seas_ind_tmp.spring))];
+                            uncert.(field_nms{i}).Rad_Spring = [nanmean(etstd_Rad(seas_ind_tmp.spring));nanmedian(etstd_Rad(seas_ind_tmp.spring))];
+                            uncert.(field_nms{i}).EF_Spring = [nanmean(etstd_EF(seas_ind_tmp.spring));nanmedian(etstd_EF(seas_ind_tmp.spring))];
+                            uncert.(field_nms{i}).G_Spring = [nanmean(etstd_G(seas_ind_tmp.spring));nanmedian(etstd_G(seas_ind_tmp.spring))];
+                        
+                            % summer
+                            uncert.(field_nms{i}).Global_Summer = [nanmean(etstd(seas_ind_tmp.summer));nanmedian(etstd(seas_ind_tmp.summer))];
+                            uncert.(field_nms{i}).LST_Summer = [nanmean(etstd_LST(seas_ind_tmp.summer));nanmedian(etstd_LST(seas_ind_tmp.summer))];
+                            uncert.(field_nms{i}).Rad_Summer = [nanmean(etstd_Rad(seas_ind_tmp.summer));nanmedian(etstd_Rad(seas_ind_tmp.summer))];
+                            uncert.(field_nms{i}).EF_Summer = [nanmean(etstd_EF(seas_ind_tmp.summer));nanmedian(etstd_EF(seas_ind_tmp.summer))];
+                            uncert.(field_nms{i}).G_Summer = [nanmean(etstd_G(seas_ind_tmp.summer));nanmedian(etstd_G(seas_ind_tmp.summer))];
+                        
+                            % autumn
+                            uncert.(field_nms{i}).Global_Autumn = [nanmean(etstd(seas_ind_tmp.autumn));nanmedian(etstd(seas_ind_tmp.autumn))];
+                            uncert.(field_nms{i}).LST_Autumn = [nanmean(etstd_LST(seas_ind_tmp.autumn));nanmedian(etstd_LST(seas_ind_tmp.autumn))];
+                            uncert.(field_nms{i}).Rad_Autumn = [nanmean(etstd_Rad(seas_ind_tmp.autumn));nanmedian(etstd_Rad(seas_ind_tmp.autumn))];
+                            uncert.(field_nms{i}).EF_Autumn = [nanmean(etstd_EF(seas_ind_tmp.autumn));nanmedian(etstd_EF(seas_ind_tmp.autumn))];
+                            uncert.(field_nms{i}).G_Autumn = [nanmean(etstd_G(seas_ind_tmp.autumn));nanmedian(etstd_G(seas_ind_tmp.autumn))];    
+                            
+                        end
+                        
+                        uncert.Global_VARs.LST_ET=[];uncert.Global_VARs.Rad_ET=[];uncert.Global_VARs.EF_ET=[];uncert.Global_VARs.G_ET=[];
+                        for i=1:length(field_nms)-1 %% last field is 'All_Sites_VARs'
+                            uncert.Global_VARs.LST_ET=[uncert.Global_VARs.LST_ET;uncert.([field_nms{i} '_VARs']).('LST_ET')];
+                            uncert.Global_VARs.Rad_ET=[uncert.Global_VARs.Rad_ET;uncert.([field_nms{i} '_VARs']).('Rad_ET')];
+                            uncert.Global_VARs.EF_ET=[uncert.Global_VARs.EF_ET;uncert.([field_nms{i} '_VARs']).('EF_ET')];
+                            uncert.Global_VARs.G_ET=[uncert.Global_VARs.G_ET;uncert.([field_nms{i} '_VARs']).('G_ET')];
+                        end
+                        
+                        if interpolatedFLUX{i_intbl}
+                            fld_name = ['uncert_interpl_LST' num2str(varind.LST) '_RAD' num2str(varind.Rad) '_EF' num2str(varind.EF) '_G' num2str(varind.G)];
+                        else
+                            fld_name = ['uncert_noninterpl_LST' num2str(varind.LST) '_RAD' num2str(varind.Rad) '_EF' num2str(varind.EF) '_G' num2str(varind.G)];
+                        end
+                        %% add/compile to struct
+                        uncertAll.(fld_name) = uncert;
+                    end
+                end
+            end
+        end
+    end %vars
+end %% END COMPILE UNCERTAINTY DATA
+uncertAll = orderfields(uncertAll);
+save \\147.100.1.28\projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\Evaluation_Benchmarking\ET_extracts\TEST\ET_subset_FRANCE\uncertAll uncertAll
+
+            %%% from uncert_allLSTs.m
+
+            uncertAll = orderfields(uncertAll);
+            uncert_flnms = fieldnames(uncertAll);
+            field_nms = fieldnames(VARS_ALL_LSTs.OUTPUTS.ETEC_pt);field_nms = sort(field_nms);field_nms{13}='All_Sites';field_nms{4}='CrauC'; 
+
+            %% plotting
+            close all
+            field_nms1=field_nms;field_nms(8)=[];field_nms{13}='All_Sites';
+            figure('Name',field_nms{i},'Renderer','painters','Position',[120 120 1600 350])
+            sbpt_ind=[2:7 9:14];
+            for i=[1:11 13]%skip larzac %1:length(field_nms)
+                
+                x_lim=nanmax(uncert.(field_nms{i}).LST(1),uncert.(field_nms{i}).LST_Summer(1));x_lim=ceil(x_lim*10)/10;
+                if isnan(x_lim),x_lim=1;end
+                
+                if i<length(field_nms),subplot(2,7,sbpt_ind(i));else,subplot(1,7,1);end   
+            
+                %% combined
+                barh(1:5,...
+                    [uncert.(field_nms{i}).LST(2),uncert.(field_nms{i}).Rad(2),uncert.(field_nms{i}).EF(2),uncert.(field_nms{i}).G(2);...
+                    uncert.(field_nms{i}).LST_Winter(2),uncert.(field_nms{i}).Rad_Winter(2),uncert.(field_nms{i}).EF_Winter(2),uncert.(field_nms{i}).G_Winter(2);...
+                    uncert.(field_nms{i}).LST_Spring(2),uncert.(field_nms{i}).Rad_Spring(2),uncert.(field_nms{i}).EF_Spring(2),uncert.(field_nms{i}).G_Spring(2);...
+                    uncert.(field_nms{i}).LST_Summer(2),uncert.(field_nms{i}).Rad_Summer(2),uncert.(field_nms{i}).EF_Summer(2),uncert.(field_nms{i}).G_Summer(2);...
+                    uncert.(field_nms{i}).LST_Autumn(2),uncert.(field_nms{i}).Rad_Autumn(2),uncert.(field_nms{i}).EF_Autumn(2),uncert.(field_nms{i}).G_Autumn(2)]...
+                    ,'stacked')
+                xlim([0 1.8]);
+                title(strrep(field_nms{i},'_',' '),'fontsize',12,'interpreter','none')
+                
+                if i<length(field_nms),set(gca,'YTickLabel',[]);if i<7,set(gca,'XTickLabel',[]);end; else,yticklabels({'All Seasons','Winter','Spring','Summer','Autumn'});if varind.LST==1,legend('LST','Radiation','EF','G');end;end
+            
+            end
+            field_nms=field_nms1; 
+
+                % enuse hess 150625
+                close all
+                field_nms1=field_nms;field_nms(8)=[];field_nms{13}='All_Sites';
+                for i_fld = [33 11 43 21]% for AQUA/TERRA MYD/MOD11 uninterpolated and interpolated -- see uncer_flnms variable %1:length(uncert_flnms)
+                    uncert = uncertAll.(uncert_flnms{i_fld});
+                    figure('Name',uncert_flnms{i_fld},'Renderer','painters','Position',[120 120 1600 350])
+                    sbpt_ind=[2:7 9:14];
+                    for i=[1:11 13]%skip larzac %1:length(field_nms)
+                        
+                        x_lim=nanmax(uncert.(field_nms{i}).LST(1),uncert.(field_nms{i}).LST_Summer(1));x_lim=ceil(x_lim*10)/10;
+                        if isnan(x_lim),x_lim=1;end
+                        
+                        if i<length(field_nms),subplot(2,7,sbpt_ind(i));else,subplot(1,7,1);end   
+                    
+                        %% combined
+                        barh(1:5,...
+                            [uncert.(field_nms{i}).LST(2),uncert.(field_nms{i}).Rad(2),uncert.(field_nms{i}).EF(2),uncert.(field_nms{i}).G(2);...
+                            uncert.(field_nms{i}).LST_Winter(2),uncert.(field_nms{i}).Rad_Winter(2),uncert.(field_nms{i}).EF_Winter(2),uncert.(field_nms{i}).G_Winter(2);...
+                            uncert.(field_nms{i}).LST_Spring(2),uncert.(field_nms{i}).Rad_Spring(2),uncert.(field_nms{i}).EF_Spring(2),uncert.(field_nms{i}).G_Spring(2);...
+                            uncert.(field_nms{i}).LST_Summer(2),uncert.(field_nms{i}).Rad_Summer(2),uncert.(field_nms{i}).EF_Summer(2),uncert.(field_nms{i}).G_Summer(2);...
+                            uncert.(field_nms{i}).LST_Autumn(2),uncert.(field_nms{i}).Rad_Autumn(2),uncert.(field_nms{i}).EF_Autumn(2),uncert.(field_nms{i}).G_Autumn(2)]...
+                            ,'edgecolor','flat')
+                        xlim([0 0.7]);
+                        title(strrep(field_nms{i},'_',' '),'fontsize',12,'interpreter','none')
+                        
+                        if i<length(field_nms),set(gca,'YTickLabel',[]);if i<7,set(gca,'XTickLabel',[]);end; else,yticklabels({'All Seasons','Winter','Spring','Summer','Autumn'});if varind.LST==1,legend('LST','Radiation','EF','G');end;end
+                    
+                    end
+                end
+                field_nms=field_nms1;
+
+                    %%% only plot barhs for ALL SITES combined --- % per land cover - 310126
+                    close all
+                    lst_vars = {'MYD11','MYD21','MOD11','MOD21'};rad_vars = {'ERA5','MSG','MERRA'};
+                    field_nms1=field_nms;field_nms(8)=[];field_nms{13}='All_Sites';
+                    lc_vars = {'All_Sites','Crop','Forest','Grass'};
+                    for i_lc=1:length(lc_vars)
+                        for i_var = 1:length(vars)
+                            varind_dummy = varind_dum;
+                            varind_dummy.(vars{i_var}) = varsind.(vars{i_var});
+                            figure('Name',[vars{i_var} '_' lc_vars{i_lc}],'Renderer','painters','Position',[120 120 1600 350])
+                            for i_lst=1:length(varind_dummy.LST) %% using loops as it's generally easier to define the subplot size & indices this way
+                                for i_rad=1:length(varind_dummy.Rad)
+                                    for i_ef=1:length(varind_dummy.EF)
+                                        for i_g=1:length(varind_dummy.G)
+                                                varind.LST = varind_dummy.LST(i_lst);%AQUA11 1, AQUA21 2, TERRA11 3, TERRA21 4
+                                                varind.Rad = varind_dummy.Rad(i_rad); %ERA5 1, MSG 2, MERRA 3
+                                                varind.EF = varind_dummy.EF(i_ef); %EF7
+                                                varind.G = varind_dummy.G(i_g);% G5
+                                            fld_name = ['LST' num2str(varind.LST) '_RAD' num2str(varind.Rad) '_EF' num2str(varind.EF) '_G' num2str(varind.G)];
+                                            uncert_noninterpl = uncertAll.(['uncert_noninterpl_' fld_name]);
+                                            uncert = uncertAll.(['uncert_interpl_' fld_name]);
+    
+                                                %%% add per landcover - 310126 | average for now -- median of all data to be tested later
+                                                if i_lc==1
+                                                    % non-interpolated
+                                                    uncertAll.(['uncert_noninterpl_' fld_name]).Crop ...
+                                                        = (uncertAll.(['uncert_noninterpl_' fld_name]).Aurade + uncertAll.(['uncert_noninterpl_' fld_name]).Lamasquere)./2;
+                                                    uncertAll.(['uncert_noninterpl_' fld_name]).Forest ...
+                                                        = (uncertAll.(['uncert_noninterpl_' fld_name]).Bilos + uncertAll.(['uncert_noninterpl_' fld_name]).Fontblanche ...
+                                                        + uncertAll.(['uncert_noninterpl_' fld_name]).LeBray + uncertAll.(['uncert_noninterpl_' fld_name]).Puechabon)./4;
+                                                    if varind_dummy.G(i_g)==6 || varind_dummy.G(i_g)==7 % LAI problem in bilos and lebray ...& cant do nanmean()
+                                                        uncertAll.(['uncert_noninterpl_' fld_name]).Forest ...
+                                                        = (uncertAll.(['uncert_noninterpl_' fld_name]).Fontblanche + uncertAll.(['uncert_noninterpl_' fld_name]).Puechabon)./2;
+                                                    end
+                                                    uncertAll.(['uncert_noninterpl_' fld_name]).Grass ...
+                                                        = (uncertAll.(['uncert_noninterpl_' fld_name]).CrauC + uncertAll.(['uncert_noninterpl_' fld_name]).Toulouse)./2;
+                                                    % interplated
+                                                    uncertAll.(['uncert_interpl_' fld_name]).Crop ...
+                                                        = (uncertAll.(['uncert_interpl_' fld_name]).Aurade + uncertAll.(['uncert_interpl_' fld_name]).Lamasquere)./2;
+                                                    uncertAll.(['uncert_interpl_' fld_name]).Forest ...
+                                                        = (uncertAll.(['uncert_interpl_' fld_name]).Bilos + uncertAll.(['uncert_interpl_' fld_name]).Fontblanche ...
+                                                        + uncertAll.(['uncert_interpl_' fld_name]).LeBray + uncertAll.(['uncert_interpl_' fld_name]).Puechabon)./4;
+                                                    if varind_dummy.G(i_g)==6 || varind_dummy.G(i_g)==7 % LAI problem in bilos and lebray ...& cant do nanmean()
+                                                        uncertAll.(['uncert_interpl_' fld_name]).Forest ...
+                                                        = (uncertAll.(['uncert_interpl_' fld_name]).Fontblanche + uncertAll.(['uncert_interpl_' fld_name]).Puechabon)./2;
+                                                    end
+                                                    uncertAll.(['uncert_interpl_' fld_name]).Grass ...
+                                                        = (uncertAll.(['uncert_interpl_' fld_name]).CrauC + uncertAll.(['uncert_interpl_' fld_name]).Toulouse)./2;
+                                                
+                                                end
+                                                %%%
+                                            x_lim=nanmax(uncert.(lc_vars{i_lc}).LST(1),uncert.(lc_vars{i_lc}).LST_Summer(1));x_lim=ceil(x_lim*10)/10;
+                                            if isnan(x_lim),x_lim=1;end
+    
+                                            ind_sbplt = (i_lst-1) + (i_rad-1) + (i_ef-1) + (i_g-1) + 1;
+    
+                                            % for non-interpolated ETs
+                                            subplot(2,length(varsind.(vars{i_var})),ind_sbplt);box on
+                                            %% combined
+                                            barh(1:5,...
+                                                [uncert_noninterpl.(lc_vars{i_lc}).LST(2),uncert_noninterpl.(lc_vars{i_lc}).Rad(2),uncert_noninterpl.(lc_vars{i_lc}).EF(2),uncert_noninterpl.(lc_vars{i_lc}).G(2);...
+                                                uncert_noninterpl.(lc_vars{i_lc}).LST_Winter(2),uncert_noninterpl.(lc_vars{i_lc}).Rad_Winter(2),uncert_noninterpl.(lc_vars{i_lc}).EF_Winter(2),uncert_noninterpl.(lc_vars{i_lc}).G_Winter(2);...
+                                                uncert_noninterpl.(lc_vars{i_lc}).LST_Spring(2),uncert_noninterpl.(lc_vars{i_lc}).Rad_Spring(2),uncert_noninterpl.(lc_vars{i_lc}).EF_Spring(2),uncert_noninterpl.(lc_vars{i_lc}).G_Spring(2);...
+                                                uncert_noninterpl.(lc_vars{i_lc}).LST_Summer(2),uncert_noninterpl.(lc_vars{i_lc}).Rad_Summer(2),uncert_noninterpl.(lc_vars{i_lc}).EF_Summer(2),uncert_noninterpl.(lc_vars{i_lc}).G_Summer(2);...
+                                                uncert_noninterpl.(lc_vars{i_lc}).LST_Autumn(2),uncert_noninterpl.(lc_vars{i_lc}).Rad_Autumn(2),uncert_noninterpl.(lc_vars{i_lc}).EF_Autumn(2),uncert_noninterpl.(lc_vars{i_lc}).G_Autumn(2)]...
+                                                ,'edgecolor','flat')
+                                            xlim([0 0.7]);set(gca,'fontsize',14,'linewidth',1)
+                                            if i_var>2
+                                                title([vars{i_var} num2str(ind_sbplt)],'fontsize',14,'interpreter','none')%title([vars{i_var} '_' num2str(ind_sbplt)],'fontsize',14,'interpreter','none')
+                                            elseif i_var==1
+                                                title(lst_vars{i_lst},'fontsize',14,'interpreter','none')                                            
+                                            else
+                                                title(rad_vars{i_rad},'fontsize',14,'interpreter','none')
+                                            end
+                                            if ind_sbplt>1,set(gca,'YTickLabel',[]);end;set(gca,'XTickLabel',[]);
+                                            if ind_sbplt==1,yticklabels({'All Seasons','Winter','Spring','Summer','Autumn'});ylabel(['noninterpl.' newline 'estimates']);if i_var==1,legend('LST','Radiation','EF','G','fontsize',14);end; end
+    
+                                            % for interpolated ETs
+                                            subplot(2,length(varsind.(vars{i_var})),ind_sbplt + length(varsind.(vars{i_var})));box on
+                                            %% combined
+                                            barh(1:5,...
+                                                [uncert.(lc_vars{i_lc}).LST(2),uncert.(lc_vars{i_lc}).Rad(2),uncert.(lc_vars{i_lc}).EF(2),uncert.(lc_vars{i_lc}).G(2);...
+                                                uncert.(lc_vars{i_lc}).LST_Winter(2),uncert.(lc_vars{i_lc}).Rad_Winter(2),uncert.(lc_vars{i_lc}).EF_Winter(2),uncert.(lc_vars{i_lc}).G_Winter(2);...
+                                                uncert.(lc_vars{i_lc}).LST_Spring(2),uncert.(lc_vars{i_lc}).Rad_Spring(2),uncert.(lc_vars{i_lc}).EF_Spring(2),uncert.(lc_vars{i_lc}).G_Spring(2);...
+                                                uncert.(lc_vars{i_lc}).LST_Summer(2),uncert.(lc_vars{i_lc}).Rad_Summer(2),uncert.(lc_vars{i_lc}).EF_Summer(2),uncert.(lc_vars{i_lc}).G_Summer(2);...
+                                                uncert.(lc_vars{i_lc}).LST_Autumn(2),uncert.(lc_vars{i_lc}).Rad_Autumn(2),uncert.(lc_vars{i_lc}).EF_Autumn(2),uncert.(lc_vars{i_lc}).G_Autumn(2)]...
+                                                ,'edgecolor','flat')
+                                            xlim([0 0.7]);set(gca,'fontsize',14,'linewidth',1)
+                                            
+                                            if ind_sbplt>1,set(gca,'YTickLabel',[]);else,yticklabels({'All Seasons','Winter','Spring','Summer','Autumn'});ylabel(['gap-filled' newline 'estimates']);end                                                           
+    
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    field_nms=field_nms1;                        
+
+            
+            %% plotting
+            close all % always close all to get .pngs with better fit
+            field_nms_=field_nms;field_nms_(13)=[];field_nms_(8) = field_nms(6);field_nms_(6) = field_nms(8);%field_nms_(8)=[];
+            field_nms_([2 5 6 12])=[]; % remove sites not used in hess
+            % figure('Position',[20 20 1020*1.35 920],'visible','off')
+                addpath \\147.100.1.28\Projects\esa_lstm_2019_2020_2021_2022\EVASPA_mwangis\misc\helpers\plotting.scripts
+                subplot = @(m,n,p) subtightplot(m, n, p, [0.015 0.01], [0.12 0.05], [0.05 0.01]);
+            for i_fld = 1:length(uncert_flnms)/2% [33 11 43 21]% for AQUA/TERRA MYD/MOD11 uninterpolated and interpolated -- see uncer_flnms variable %1:length(uncert_flnms)
+                    uncert = uncertAll.(uncert_flnms{i_fld});
+                    uncert_noninterpl = uncertAll.(strrep(uncert_flnms{i_fld},'_interpl_','_noninterpl_'));
+                    % figure('Position',[20 20 1220*3.5 500],'visible','off')%figure('Position',[20 20 1020*2 600],'visible','off')
+                    figure('Position',[20 20 1020*2 600],'visible','off')
+                    for i_st=1:length(field_nms_)
+                        % non-interpolated estimates
+                        subplot(2,8,i_st)%subplot(2,6,i_st)
+                        plot(uncert_noninterpl.([field_nms_{i_st} '_stdev2D']).AllMedian(1,:),'s','markersize',2,'linewidth',1,'color','g')
+                        hold on
+                        plot(uncert_noninterpl.([field_nms_{i_st} '_stdev2D']).AllMedian(2,:),'^','markersize',2,'linewidth',1,'color','b')
+                        plot(uncert_noninterpl.([field_nms_{i_st} '_stdev2D']).AllMedian(3,:),'x','markersize',2,'linewidth',1,'color','r')
+                        plot(uncert_noninterpl.([field_nms_{i_st} '_stdev2D']).AllMedian(4,:),'o','markersize',2,'linewidth',1,'color',[0.5,0.5,0.5])
+                        plot(uncert_noninterpl.([field_nms_{i_st} '_stdev2D']).AllMedian(5,:),'*','markersize',2,'linewidth',1,'color',[0.8,0.8,0])%'k')
+                        axis square;set(gca,'box','on','linewidth',1,'fontsize',14,'XTickLabel',[]);xlim([0 366]);ylim([0 1.5]);%ylim([0 2]);
+                        if i_st==1,ylabel(['non-interpolated' newline 'ET median StDev'],'fontsize',17);else,set(gca,'YTickLabel',[]);end%if i_st==1 || i_st==5 || i_st==9,ylabel('ET median StDev');else,set(gca,'YTickLabel',[]);end
+                        % if i_st==6,legend(uncert.([field_nms_{i_st} '_stdev2D']).rows,'interpreter','none','location','west','fontsize',15);axis off;else,if field_nms_{i_st}=="CrauC",ttl='Coussoul';else,ttl=field_nms_{i_st};end;title(ttl,'interpreter','none','fontsize',13);end
+                        % if i_st==6,legend(uncert.([field_nms_{i_st} '_stdev2D']).rows,'interpreter','none','location','west','fontsize',15);end
+                        if field_nms_{i_st}=="CrauC",ttl='Coussoul';else,ttl=field_nms_{i_st};end;title(ttl,'interpreter','none','fontsize',16);
+                        % interpoled estimates
+                        subplot(2,8,i_st+length(field_nms_))%subplot(2,6,i_st)
+                        plot(uncert.([field_nms_{i_st} '_stdev2D']).AllMedian(1,:),'s','markersize',2,'linewidth',1,'color','g')
+                        hold on
+                        plot(uncert.([field_nms_{i_st} '_stdev2D']).AllMedian(2,:),'^','markersize',2,'linewidth',1,'color','b')
+                        plot(uncert.([field_nms_{i_st} '_stdev2D']).AllMedian(3,:),'x','markersize',2,'linewidth',1,'color','r')
+                        plot(uncert.([field_nms_{i_st} '_stdev2D']).AllMedian(4,:),'o','markersize',2,'linewidth',1,'color',[0.5,0.5,0.5])
+                        plot(uncert.([field_nms_{i_st} '_stdev2D']).AllMedian(5,:),'*','markersize',2,'linewidth',1,'color',[0.8,0.8,0])%'k')
+                        axis square;set(gca,'box','on','linewidth',1,'fontsize',14);xlim([0 366]);ylim([0 1.5]);%ylim([0 2]);
+                        xlabel('DoY [over 2004-2024]','fontsize',14);
+                        if i_st==1,ylabel(['gap filled' newline 'ET median StDev'],'fontsize',17);else,set(gca,'YTickLabel',[]);end%if i_st==1 || i_st==5 || i_st==9,ylabel('ET median StDev');else,set(gca,'YTickLabel',[]);end
+                        %if i_st==length(field_nms_),legend(uncert.([field_nms_{i_st} '_stdev2D']).rows,'interpreter','none','location','northeast','fontsize',15);end
+                    end
+                    out_dir = [result_path 'FIGS\MEDIAN_SD\All\'];                    
+                    if ~isdir(out_dir),mkdir(out_dir);end
+                    % saveas(gca,[out_dir 'AllSitesUncertainty_lst' num2str(varind.LST) '_rad' num2str(varind.Rad) '_ef' num2str(varind.EF) '_g' num2str(varind.G) '.png'])
+                    saveas(gca,[out_dir 'AllSites' strrep(strrep(uncert_flnms{i_fld},'uncert_','Uncertainty_'),'_interpl','') '.png'])
+                    % keyboard
+            end;clear subplot
+    
+            
+            close all
+            for i=1:length(field_nms)
+                % figure('Name',field_nms{i})
+                figure('Name',field_nms{i},'Renderer','painters','Position',[120 120 490 720],'visible','off');
+            
+                x_lim=nanmax(uncert.(field_nms{i}).LST(1),uncert.(field_nms{i}).LST_Summer(1));x_lim=ceil(x_lim*10)/10;
+                if isnan(x_lim),x_lim=1;end
+                
+                subplot(5,1,1)
+                box('on')
+                hold on
+                barh(1,uncert.(field_nms{i}).LST(2),'r')
+                barh(2,uncert.(field_nms{i}).Rad(2),'b')
+                barh(3,uncert.(field_nms{i}).EF(2),'facecolor',[.47 .23 0])
+                barh(4,uncert.(field_nms{i}).G(2),'k')
+                
+                xlim([0 x_lim]);set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);title(['All seas. - ' field_nms{i}],'interpreter','none')
+                legend('LST','Radiation','EF','G')
+            
+                subplot(5,1,2)
+                box('on')
+                hold on
+                barh(1,uncert.(field_nms{i}).LST_Winter(2),'r')
+                barh(2,uncert.(field_nms{i}).Rad_Winter(2),'b')
+                barh(3,uncert.(field_nms{i}).EF_Winter(2),'facecolor',[.47 .23 0])
+                barh(4,uncert.(field_nms{i}).G_Winter(2),'k')
+                xlim([0 x_lim]);set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);title('Winter')
+            
+                subplot(5,1,3)
+                box('on')
+                hold on
+                barh(1,uncert.(field_nms{i}).LST_Spring(2),'r')
+                barh(2,uncert.(field_nms{i}).Rad_Spring(2),'b')
+                barh(3,uncert.(field_nms{i}).EF_Spring(2),'facecolor',[.47 .23 0])
+                barh(4,uncert.(field_nms{i}).G_Spring(2),'k')
+                xlim([0 x_lim]);set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);title('Spring')
+            
+                subplot(5,1,4)
+                box('on')
+                hold on
+                barh(1,uncert.(field_nms{i}).LST_Summer(2),'r')
+                barh(2,uncert.(field_nms{i}).Rad_Summer(2),'b')
+                barh(3,uncert.(field_nms{i}).EF_Summer(2),'facecolor',[.47 .23 0])
+                barh(4,uncert.(field_nms{i}).G_Summer(2),'k')
+                xlim([0 x_lim]);set(gca,'XTickLabel',[]);set(gca,'YTickLabel',[]);title('Summer')
+            
+                subplot(5,1,5)
+                box('on')
+                hold on
+                barh(1,uncert.(field_nms{i}).LST_Autumn(2),'r')
+                barh(2,uncert.(field_nms{i}).Rad_Autumn(2),'b')
+                barh(3,uncert.(field_nms{i}).EF_Autumn(2),'facecolor',[.47 .23 0])
+                barh(4,uncert.(field_nms{i}).G_Autumn(2),'k')
+                xlim([0 x_lim]);set(gca,'YTickLabel',[]);xlabel('Uncertainty [StdDev]');title('Autumn')
+                if ~isdir(result_path),mkdir(result_path);end
+                saveas(gca,[result_path field_nms{i} '.png'])
+            
+                %% combined
+                barh(1:5,...
+                    [uncert.(field_nms{i}).LST(2),uncert.(field_nms{i}).Rad(2),uncert.(field_nms{i}).EF(2),uncert.(field_nms{i}).G(2);...
+                    uncert.(field_nms{i}).LST_Winter(2),uncert.(field_nms{i}).Rad_Winter(2),uncert.(field_nms{i}).EF_Winter(2),uncert.(field_nms{i}).G_Winter(2);...
+                    uncert.(field_nms{i}).LST_Spring(2),uncert.(field_nms{i}).Rad_Spring(2),uncert.(field_nms{i}).EF_Spring(2),uncert.(field_nms{i}).G_Spring(2);...
+                    uncert.(field_nms{i}).LST_Summer(2),uncert.(field_nms{i}).Rad_Summer(2),uncert.(field_nms{i}).EF_Summer(2),uncert.(field_nms{i}).G_Summer(2);...
+                    uncert.(field_nms{i}).LST_Autumn(2),uncert.(field_nms{i}).Rad_Autumn(2),uncert.(field_nms{i}).EF_Autumn(2),uncert.(field_nms{i}).G_Autumn(2)]...
+                    ,'stacked')
+                yticklabels({'All Seasons','Winter','Spring','Summer','Autumn'})
+            
+            end
+            % field_nms(13)=[];
+             %%% all sites combined
+            
+            %%%
+
+%% LST 
+% emis sep methods aqua11 aqua21
+lstSD.LST1121aa_SD=nanstd([uncert.Global_VARs.LST_ET(:,1),uncert.Global_VARs.LST_ET(:,2)],0,2);
+
+% emis sep methods terra11 terra21
+lstSD.LST1121tt_SD=nanstd([uncert.Global_VARs.LST_ET(:,3),uncert.Global_VARs.LST_ET(:,4)],0,2);
+
+% emis sep methods aqua11 terra21
+lstSD.LST1121at_SD=nanstd([uncert.Global_VARs.LST_ET(:,1),uncert.Global_VARs.LST_ET(:,4)],0,2);
+
+% emis sep methods terra11 aqua21
+lstSD.LST1121ta_SD=nanstd([uncert.Global_VARs.LST_ET(:,3),uncert.Global_VARs.LST_ET(:,2)],0,2);
+
+%  aqua11 vs terra11
+lstSD.LST1111at_SD=nanstd([uncert.Global_VARs.LST_ET(:,1),uncert.Global_VARs.LST_ET(:,3)],0,2);
+
+%  aqua21 vs terra21
+lstSD.LST2121at_SD=nanstd([uncert.Global_VARs.LST_ET(:,2),uncert.Global_VARs.LST_ET(:,4)],0,2);
+
+
+% xxx=[nanmedian(LST1121aa_SD);nanmedian(LST1121tt_SD);nanmedian(LST1121at_SD);nanmedian(LST1121ta_SD);nanmedian(LST1111at_SD);nanmedian(LST2121at_SD)]
+% 
+% xxx1=table(xxx,'rownames',fieldnames(lstSD));
+
+% matSD = [nan,nan,nan,nan;...
+%     nanmedian(lstSD.LST1121aa_SD),nan,nan,nan;...
+%     nanmedian(lstSD.LST1111at_SD),nanmedian(lstSD.LST1121ta_SD),nan,nan;...
+%     nanmedian(lstSD.LST1121at_SD),nanmedian(lstSD.LST2121at_SD),nanmedian(lstSD.LST1121tt_SD),nan];
+matSD = [nan,nan,nan,nan;...
+    nanmedian(lstSD.LST1121aa_SD),nan,nan,nan;...
+    nanmedian(lstSD.LST1111at_SD),nanmedian(lstSD.LST1121ta_SD)*nan,nan,nan;...
+    nanmedian(lstSD.LST1121at_SD)*nan,nanmedian(lstSD.LST2121at_SD),nanmedian(lstSD.LST1121tt_SD),nan];
+
+        figure
+        h=heatmap(matSD,'celllabelcolor','none','missingdatacolor','white');set(gca,'colormap',jet);%#ok
+        set(h,'grid','off')
+        % s=struct(h);s.XAxis.Visible='off';
+        title('SD')
+        flds={'AQUA11','AQUA21','TERRA11','TERRA21'};
+        h.XDisplayLabels = flds;h.YDisplayLabels = flds;
+        
+        figure
+        hold on
+        barh(2,[nanmedian(lstSD.LST1121aa_SD),nanmedian(lstSD.LST1121tt_SD)],'stacked')        
+        barh(1,[nanmedian(lstSD.LST1111at_SD),nanmedian(lstSD.LST2121at_SD)],'stacked')
+        legend('AQUA (MYD)','TERRA (MOD)','11 (SW)','21 (TES)')
+        yticklabels({'','','AQUA vs TERRA','','11 vs 21'})
+        xlabel('SD [mm d^-^1]')
+        box('on')
+        set(gca,'linewidth',1.5,'fontsize',14)
+
+        %% 240225 - egu25
+        figure
+        hold on
+        barh(4,[nanmedian(lstSD.LST1121tt_SD)])
+        barh(3,[nanmedian(lstSD.LST1121aa_SD)])        
+        barh(2,[nanmedian(lstSD.LST1111at_SD)])                
+        barh(1,[nanmedian(lstSD.LST2121at_SD)])
+        legend('11 & 21 TERRA (MOD)','11 & 21 AQUA (MYD)','TERRA & AQUA 11 (SW)','TERRA & AQUA 21 (TES)')
+        % yticklabels({'','','Between TERRA & AQUA 21','','Between TERRA & AQUA 11','','Between 11 & 21 AQUA','','Between 11 & 21 TERRA'})
+        yticklabels({'','','TERRA & AQUA 21','','TERRA & AQUA 11','','11 & 21 AQUA','','11 & 21 TERRA'})
+        xlabel('SD [mm d^-^1]');xlim([0 0.3])
+        box('on')
+        set(gca,'linewidth',1.5,'fontsize',16)
+%% LST uncertainty END
+
+%%
+%%
+%% UNCERTAINTY END
+%%
+%% %%%%%%%%%%%%%%%%%%%
 
 %%% -ufu-
