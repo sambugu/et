@@ -61,11 +61,11 @@ function ET_MSG(indir,MSG_dir_var,outdir,ROIsites,extract_what)
                         case 'area'
                             out_dir = [outdir ROIsites.(char(fields(i_flds))).subset_nm '\' extract_what '\ET_subset_' ROIsites.(char(fields(i_flds))).subset_nm '\MSG_' strrep(strrep(char(msg_dir(i_msgET)),'\NETCDF\',''),'MSG\','')];
                             if ~isfolder(out_dir), mkdir(out_dir),end
-                            save([out_dir '\' msg_ncfls(i_msgfls).name(1:end-11)],'-struct','ET')
+                            save([out_dir '\' msg_ncfls(i_msgfls).name(1:end-11)],'-struct','ET','-v7.3')
                         case 'point'                        
                             out_dir = [outdir ROIsites.(char(fields(i_flds))).site_nm '\' extract_what '\ET_' ROIsites.(char(fields(i_flds))).site_nm '\MSG_' strrep(strrep(char(msg_dir(i_msgET)),'\NETCDF\',''),'MSG\','')];
                             if ~isfolder(out_dir), mkdir(out_dir),end
-                            save([out_dir '\' msg_ncfls(i_msgfls).name(1:end-11)],'-struct','ET_pt')
+                            save([out_dir '\' msg_ncfls(i_msgfls).name(1:end-11)],'-struct','ET_pt','-v7.3')
                 end
                 clear ET_pt ET
             end
